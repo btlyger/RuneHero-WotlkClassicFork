@@ -9,6 +9,27 @@ local RUNETYPEC_UNHOLY = 2;
 local RUNETYPEC_FROST = 3;
 local RUNETYPEC_DEATH = 4;
 
+local runeTextures = {
+    [RUNETYPEC_BLOOD] = "Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Blood",
+    [RUNETYPEC_UNHOLY] = "Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Unholy",
+    [RUNETYPEC_FROST] = "Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Frost",
+    [RUNETYPEC_DEATH] = "Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Death",
+}
+
+local runeColors = {
+    [RUNETYPEC_BLOOD] = {0.65, 0, 0, 1},
+    [RUNETYPEC_UNHOLY] = {0, 0.65, 0, 1},
+    [RUNETYPEC_FROST] = {0, 0.3, 1.0, 1},
+    [RUNETYPEC_DEATH] = {0.8, 0.2, 1.0, 1},
+}
+
+local cooldownRuneColors = {
+    [RUNETYPEC_BLOOD] = {0.325, 0, 0, 1},
+    [RUNETYPEC_UNHOLY] = {0, 0.325, 0, 1},
+    [RUNETYPEC_FROST] = {0, 0.15, 0.5, 1},
+    [RUNETYPEC_DEATH] = {0.4, 0.1, 0.5, 1},
+}
+
 local offset = 15;
 local start = -85;
 
@@ -56,23 +77,23 @@ function RuneButtonC_OnLoad (self)
 end
 
 function RuneButtonC_OnUpdate (self, elapsed)
-
-	local start, duration, r = GetRuneCooldown(self:GetID());
+    local runeId = self:GetID()
+	local start, duration, r = GetRuneCooldown(runeId);
 
 	if (r) then
-		self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX, runeY[self:GetID()]);
+		self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX, runeY[runeId]);
 	else
 		local remain = -1;
 		if (duration ~= nil and start ~= nil) then
 			remain = (duration - GetTime() + start) / duration;
 		end
-		
+        
 		if ( remain < 0) then 
-			self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX, runeY[self:GetID()] );
+			self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX, runeY[runeId] );
 		elseif ( remain > 1) then
-			self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX + RuneHero_Saved.scrollWidth, runeY[self:GetID()] );
+			self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX + RuneHero_Saved.scrollWidth, runeY[runeId] );
 		else
-			self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX + remain*RuneHero_Saved.scrollWidth, runeY[self:GetID()] );
+			self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX + remain*RuneHero_Saved.scrollWidth, runeY[runeId] );
 		end
 	end
 end
@@ -87,29 +108,14 @@ function RuneButtonC_Update (self, rune)
     end
 
     local runeType = GetRuneType(self:GetID());
-
-    if (runeType == RUNETYPEC_BLOOD) then
-        self.rune:SetTexture("Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Blood" );
-
-        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
-        self.texture:SetVertexColor(.65,0,0,1);
-    elseif (runeType == RUNETYPEC_UNHOLY) then
-        self.rune:SetTexture("Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Unholy");
-
-        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
-        self.texture:SetVertexColor(0,.65,0,1);
-    elseif (runeType == RUNETYPEC_FROST) then
-        self.rune:SetTexture("Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Frost" );
-
-        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
-        self.texture:SetVertexColor(0,.3,1,1);
-    elseif (runeType == RUNETYPEC_DEATH) then
-        self.rune:SetTexture("Interface\\PlayerFrame\\UI-PlayerFrame-DeathKnight-Death" );
-
-        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
-        self.texture:SetVertexColor(.91,.25,.96,1);
-    end
     
+    if (runeType ~= nil) then
+        self.rune:SetTexture(runeTextures[runeType]);
+                
+        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
+        self.texture:SetVertexColor(unpack(runeColors[runeType]));
+    end
+        
     self.bg:SetVertexColor(.2,.2,.2,1);
 
     self.rune:SetWidth(25);
