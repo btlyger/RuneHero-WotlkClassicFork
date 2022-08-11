@@ -19,13 +19,21 @@ function RH.RuneHero_LoadOptions (self)
 	local lockButton = CreateFrame( "CheckButton", "lockButton", rhOptions, "OptionsCheckButtonTemplate");
 	lockButton.text = _G["lockButton".."Text"];
 	lockButton.text:SetText("Lock RuneHero");
-	lockButton:SetPoint("BOTTOMLEFT", titleString, 0, -40);
+	lockButton:SetPoint("BOTTOMLEFT", titleString, 10, -40);
 	lockButton:SetScript("OnClick", RuneHero_Lock );
 	lockButton:SetChecked(true);
+ 
+     -- Button to enable desaturation for runes on cooldown runehero
+    local runeCdButton = CreateFrame( "CheckButton", "runeCdButton", rhOptions, "OptionsCheckButtonTemplate");
+    runeCdButton.text = _G["runeCdButton".."Text"];
+    runeCdButton.text:SetText("Desaturate Runes on Cooldown");
+    runeCdButton:SetPoint("BOTTOMLEFT", lockButton, 0, -40);
+    runeCdButton:SetScript("OnClick", RuneHero_DesaturateToggle );
+    runeCdButton:SetChecked(RuneHero_Saved.desaturateRunes);
 	
 	-- Drop down menu to select runeblade graphic
 	local runebladeSelector = CreateFrame( "Frame", "runebladeSelector", rhOptions, "UIDropDownMenuTemplate");
-	runebladeSelector:SetPoint("BOTTOMLEFT", lockButton, 0, -40);
+	runebladeSelector:SetPoint("BOTTOMLEFT", runeCdButton, 0, -40);
 	runebladeSelector.text = _G["runebladeSelector".."Text"];
 	runebladeSelector.text:SetText( RuneHero_Saved.runebladeSelectorTitle );
 	local info = {};
@@ -139,6 +147,12 @@ function RuneHero_Unlock()
 	RuneButtonIndividual1C:SetScript('OnDragStop', RuneFrameC_OnDragStop );
 	RuneFrameC:SetClampedToScreen(true);
 	DEFAULT_CHAT_FRAME:AddMessage(" RuneHero unlocked. Click on the top rune icon to drag.");
+end
+
+function RuneHero_DesaturateToggle()
+    local desaturateRunes = runeCdButton:GetChecked()
+    
+    RuneHero_Saved.desaturateRunes = desaturateRunes
 end
 
 function RuneHero_Resize(scaleParam)

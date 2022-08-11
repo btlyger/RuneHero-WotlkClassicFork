@@ -53,6 +53,7 @@ RuneHero_Saved = {
 	scrollWidth = 260;
 	blade = "runeblade";
 	runebladeSelectorTitle = "Runeblade";
+    desaturateRunes = true;
 };
 
 function RunePower_Event ()
@@ -78,15 +79,24 @@ end
 
 function RuneButtonC_OnUpdate (self, elapsed)
     local runeId = self:GetID()
+    local runeType = GetRuneType(self:GetID());
 	local start, duration, r = GetRuneCooldown(runeId);
 
 	if (r) then
 		self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX, runeY[runeId]);
+        
+        if (runeType ~= nil and RuneHero_Saved.desaturateRunes) then
+            self.texture:SetVertexColor(unpack(runeColors[runeType]));
+        end
 	else
 		local remain = -1;
 		if (duration ~= nil and start ~= nil) then
 			remain = (duration - GetTime() + start) / duration;
 		end
+		
+        if (runeType ~= nil and RuneHero_Saved.desaturateRunes) then
+            self.texture:SetVertexColor(unpack(cooldownRuneColors[runeType]));
+        end
         
 		if ( remain < 0) then 
 			self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX, runeY[runeId] );
@@ -348,7 +358,9 @@ function RuneHero_LoadDefaults()
 	if (RuneHero_Saved.blade == nil) then
 		RuneHero_Saved.blade = "runeblade";
 	end
-	
+     if (RuneHero_Saved.desaturateRunes == nil) then
+        RuneHero_Saved.desaturateRunes = true;
+    end
 end
 
 
