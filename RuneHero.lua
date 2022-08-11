@@ -4,6 +4,11 @@ local runePowerStatusBar;
 local runePowerStatusBarDark;
 local runePowerStatusBarText;
 
+local RUNETYPEC_BLOOD = 1;
+local RUNETYPEC_UNHOLY = 2;
+local RUNETYPEC_FROST = 3;
+local RUNETYPEC_DEATH = 4;
+
 local offset = 15;
 local start = -85;
 
@@ -74,29 +79,48 @@ end
 
 function RuneButtonC_Update (self, rune)
 
-	
-	-- Disable rune frame if not a death knight.
-	local _, class = UnitClass("player");
-	
-	if ( class ~= "DEATHKNIGHT" ) then
-		self:Hide();
-	end
+    -- Disable rune frame if not a death knight.
+    local _, class = UnitClass("player");
+    
+    if ( class ~= "DEATHKNIGHT" ) then
+        self:Hide();
+    end
 
-	self.rune:SetTexture("Interface\\PlayerFrame\\UI-PlayerFrame-DeathKnight-Chromatic-On.tga" );
-	self.rune:SetVertexColor(1,1,1);
+    local runeType = GetRuneType(self:GetID());
 
-	self.texture:SetTexture("Interface\\CHARACTERFRAME\\TotemBorder");
-	self.texture:SetDesaturated(true);
+    if (runeType == RUNETYPEC_BLOOD) then
+        self.rune:SetTexture("Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Blood" );
 
-	self.rune:SetWidth(20);
-	self.rune:SetHeight(20);
+        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
+        self.texture:SetVertexColor(.65,0,0,1);
+    elseif (runeType == RUNETYPEC_UNHOLY) then
+        self.rune:SetTexture("Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Unholy");
 
-	self.bg:SetWidth(20);	
-	self.bg:SetHeight(20);
+        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
+        self.texture:SetVertexColor(0,.65,0,1);
+    elseif (runeType == RUNETYPEC_FROST) then
+        self.rune:SetTexture("Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Frost" );
 
-	self.border:SetWidth(39);
-	self.border:SetHeight(39);	
-	
+        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
+        self.texture:SetVertexColor(0,.3,1,1);
+    elseif (runeType == RUNETYPEC_DEATH) then
+        self.rune:SetTexture("Interface\\PlayerFrame\\UI-PlayerFrame-DeathKnight-Death" );
+
+        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
+        self.texture:SetVertexColor(.91,.25,.96,1);
+    end
+    
+    self.bg:SetVertexColor(.2,.2,.2,1);
+
+    self.rune:SetWidth(25);
+    self.rune:SetHeight(25);
+    
+    self.bg:SetWidth(17);
+    self.bg:SetHeight(17);
+
+    self.border:SetWidth(29);
+    self.border:SetHeight(29);
+    
 end
 
 function RuneFrameC_OnLoad (self)
@@ -115,7 +139,7 @@ function RuneFrameC_OnLoad (self)
 	self:SetFrameLevel(1);
 	
 	self:RegisterEvent("PLAYER_ENTERING_WORLD");
-	--self:RegisterEvent("RUNE_TYPE_UPDATE");
+	self:RegisterEvent("RUNE_TYPE_UPDATE");
 	--self:RegisterEvent("RUNE_REGEN_UPDATE");
 	self:RegisterEvent("COMBAT_LOG_EVENT");
 	self:RegisterEvent("ADDON_LOADED");
@@ -226,7 +250,7 @@ function RuneFrameC_OnEvent (self, event, ...)
 		runePowerStatusBarText:ClearAllPoints();
 		runePowerStatusBarText:SetFontObject( WorldMapTextFont );
 		runePowerStatusBarText:SetTextColor(.6,.9,1);
-		runePowerStatusBarText:SetPoint("TOP", RuneBlade, "TOP");
+		runePowerStatusBarText:SetPoint("TOP", RuneBlade, "TOP", -30, -20);
 		runePowerStatusBarText:SetJustifyH("CENTER");
 		runePowerStatusBarText:SetWidth(90);
 		runePowerStatusBarText:SetHeight(40);
