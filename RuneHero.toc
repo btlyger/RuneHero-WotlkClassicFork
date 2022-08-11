@@ -1,0 +1,10 @@
+## Interface: 80205
+## Title: RuneHero
+## Notes: The ultimate runic experience.
+## Author: Lowbrow, Triadian, Xeelee
+## SavedVariables: RuneHero_Saved
+## Version: 1.5.3
+
+RuneHero.xml
+RuneHero.lua
+RuneHero_Options.lua
