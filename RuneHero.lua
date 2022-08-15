@@ -37,10 +37,10 @@ local start = -85;
 local runeY = {
 	[1] = start,
 	[2] = start-offset,
-	[3] = start-offset*2,
-	[4] = start-offset*3,
-	[5] = start-offset*4,
-	[6] = start-offset*5
+	[5] = start-offset*2, -- In wotlk classic, frost and unholy are swapped in the UI
+	[6] = start-offset*3,
+	[3] = start-offset*4,
+	[4] = start-offset*5
 }
 
 RuneHero_Saved = {
@@ -65,7 +65,6 @@ function RuneButtonC_OnLoad (self)
 	self.texture = getglobal(self:GetName().."BorderTexture");
 	self.bg = getglobal(self:GetName().."BG");
     self.shineTexture = getglobal(self:GetName().."ShineTexture");
-    UIFrameFadeOut(self.shineTexture, 0);
 
 	RuneButtonC_Update(self);
 
@@ -119,8 +118,7 @@ function RuneButtonC_Update (self, runeIndex, dontFlash)
     
     if (runeType ~= nil) then
         if (not dontFlash and self.rune.runeType ~= runeType) then
-            DEFAULT_CHAT_FRAME:AddMessage("Different rune types!!");
-            RuneButtonC_ShineFadeIn(self.shineTexture)
+            --RuneButtonC_ShineFadeIn(self.shineTexture)
         end
     
         self.rune:SetTexture(runeTextures[runeType]);
@@ -354,17 +352,17 @@ function RuneHero_SetLevels()
 	RuneFrameC.runes[2]:SetFrameLevel(30);
 	RuneFrameC.runes[2]:SetFrameLevel(31);
 
-	RuneFrameC.runes[3]:SetFrameLevel(40);
-	RuneFrameC.runes[3]:SetFrameLevel(41);
+	RuneFrameC.runes[5]:SetFrameLevel(40); -- In wotlk classic, unholy and frost are swapped in the UI
+	RuneFrameC.runes[5]:SetFrameLevel(41);
 
-	RuneFrameC.runes[4]:SetFrameLevel(50);
-	RuneFrameC.runes[4]:SetFrameLevel(51);
+	RuneFrameC.runes[6]:SetFrameLevel(50);
+	RuneFrameC.runes[6]:SetFrameLevel(51);
 
-	RuneFrameC.runes[5]:SetFrameLevel(60);
-	RuneFrameC.runes[5]:SetFrameLevel(61);
+	RuneFrameC.runes[3]:SetFrameLevel(60);
+	RuneFrameC.runes[3]:SetFrameLevel(61);
 
-	RuneFrameC.runes[6]:SetFrameLevel(70);
-	RuneFrameC.runes[6]:SetFrameLevel(71);
+	RuneFrameC.runes[4]:SetFrameLevel(70);
+	RuneFrameC.runes[4]:SetFrameLevel(71);
 
 end
 
