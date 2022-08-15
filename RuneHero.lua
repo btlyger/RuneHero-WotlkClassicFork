@@ -5,10 +5,11 @@ local runePowerStatusBarDark;
 local runePowerStatusBarText;
 
 local RUNETYPEC_BLOOD = 1;
-local RUNETYPEC_UNHOLY = 2;
-local RUNETYPEC_FROST = 3;
+local RUNETYPEC_FROST = 2;
+local RUNETYPEC_UNHOLY = 3;
 local RUNETYPEC_DEATH = 4;
 
+--Reference /FrameXML/RuneFrame.lua -- https://searchcode.com/codesearch/view/78334991/
 local runeTextures = {
     [RUNETYPEC_BLOOD] = "Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Blood",
     [RUNETYPEC_UNHOLY] = "Interface\\PlayerFrame\\UI-PlayerFrame-Deathknight-Unholy",
@@ -56,9 +57,6 @@ RuneHero_Saved = {
     desaturateRunes = true;
 };
 
-function RunePower_Event ()
-end
-
 function RuneButtonC_OnLoad (self)
 	RuneFrameC_AddRune(RuneFrameC, self);
 	
@@ -66,8 +64,8 @@ function RuneButtonC_OnLoad (self)
 	self.border = getglobal(self:GetName().."Border");
 	self.texture = getglobal(self:GetName().."BorderTexture");
 	self.bg = getglobal(self:GetName().."BG");
-
-	self.border = getglobal(self:GetName().."Border");
+    self.shineTexture = getglobal(self:GetName().."ShineTexture");
+    UIFrameFadeOut(self.shineTexture, 0);
 
 	RuneButtonC_Update(self);
 
@@ -108,7 +106,7 @@ function RuneButtonC_OnUpdate (self, elapsed)
 	end
 end
 
-function RuneButtonC_Update (self, rune)
+function RuneButtonC_Update (self, runeIndex, dontFlash)
 
     -- Disable rune frame if not a death knight.
     local _, class = UnitClass("player");
@@ -117,11 +115,16 @@ function RuneButtonC_Update (self, rune)
         self:Hide();
     end
 
-    local runeType = GetRuneType(self:GetID());
+    local runeType = GetRuneType(runeIndex);
     
     if (runeType ~= nil) then
+        if (not dontFlash and self.rune.runeType ~= runeType) then
+            DEFAULT_CHAT_FRAME:AddMessage("Different rune types!!");
+            RuneButtonC_ShineFadeIn(self.shineTexture)
+        end
+    
         self.rune:SetTexture(runeTextures[runeType]);
-                
+        self.rune.runeType = runeType
         self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
         self.texture:SetVertexColor(unpack(runeColors[runeType]));
     end
@@ -137,6 +140,39 @@ function RuneButtonC_Update (self, rune)
     self.border:SetWidth(29);
     self.border:SetHeight(29);
     
+end
+
+function RuneButtonC_Event (rune, runeIndex, isEnergized)
+    local start, duration, runeReady = GetRuneCooldown(runeIndex);
+
+    if not runeReady then
+        RuneButtonC_ShineFadeOut(rune.shineTexture, 0)
+    else
+        RuneButtonC_ShineFadeIn(rune.shineTexture)
+    end
+end
+
+function RuneButtonC_ShineFadeIn(self)
+    if self.shining then
+        return
+    end
+    local fadeInfo={
+    mode = "IN",
+    timeToFade = 0.5,
+    finishedFunc = RuneButtonC_ShineFadeOut,
+    finishedArg1 = self,
+    }
+    self.shining=true;
+    UIFrameFade(self, fadeInfo);
+end
+
+function RuneButtonC_ShineFadeOut(self, fadeTime)
+    self.shining=false;
+    if fadeTime then
+        UIFrameFadeOut(self, fadeTime);
+    else
+        UIFrameFadeOut(self, 0.5);
+    end
 end
 
 function RuneFrameC_OnLoad (self)
@@ -156,6 +192,7 @@ function RuneFrameC_OnLoad (self)
 	
 	self:RegisterEvent("PLAYER_ENTERING_WORLD");
 	self:RegisterEvent("RUNE_TYPE_UPDATE");
+    self:RegisterEvent("RUNE_POWER_UPDATE");
 	--self:RegisterEvent("RUNE_REGEN_UPDATE");
 	self:RegisterEvent("COMBAT_LOG_EVENT");
 	self:RegisterEvent("ADDON_LOADED");
@@ -213,23 +250,25 @@ function RuneFrameC_OnEvent (self, event, ...)
 	-- Fires when the player enters the world, enters/leaves an instance, respawns at a GY, possibly at any loading screen as well
 	elseif ( event == "PLAYER_ENTERING_WORLD" ) then
 		for rune in next, self.runes do
-			RuneButtonC_Update(self.runes[rune], rune);
+			RuneButtonC_Update(self.runes[rune], rune, true);
 		end
-		RunePower_Event();
 
 	-- Fires when a rune changes to/from a Death rune
 	elseif ( event == "RUNE_TYPE_UPDATE" ) then
 		for rune in next, self.runes do
 			RuneButtonC_Update(self.runes[rune], rune);
 		end
-
+        
 	-- Fires when the runic power changes
 	elseif ( event == "RUNE_POWER_UPDATE" ) then
-		RunePower_Event();
-
-	-- Fires when the rune regen time changes
+        local runeIndex, isEnergized = ...;
+        
+        if (runeIndex >= 1) then
+            RuneButtonC_Event(self.runes[runeIndex], runeIndex, isEnergized);
+        end
+	-- Fires when the rune regen time changes (Retail only)
 	elseif ( event == "RUNE_REGEN_UPDATE" ) then
-		RunePower_Event();
+		RuneButtonC_Event();
 
 	-- Fires when RuneHero and the saved variables are loaded
 	elseif ( event == "ADDON_LOADED"  ) then

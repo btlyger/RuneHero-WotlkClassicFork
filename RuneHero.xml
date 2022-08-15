@@ -27,6 +27,21 @@
                 </OnLoad>
             </Scripts>
         </Frame>
+        <Frame frameStrata="MEDIUM" setAllPoints="true" name="$parentShine">
+            <Layers>
+                <Layer level="OVERLAY">
+                    <Texture name="$parentTexture" file="Interface\ComboFrame\ComboPoint" alphaMode="ADD" hidden="true">
+                        <Size x="37" y="37"/>
+                        <Anchors>
+                            <Anchor point="CENTER">
+                                <Offset x="0" y="0"/>
+                            </Anchor>
+                        </Anchors>
+                        <TexCoords left="0.563" right="1" top="0" bottom="1"/>
+                    </Texture>
+                </Layer>
+            </Layers>
+        </Frame>
     </Frames>
     <Layers>
         <Layer level="BACKGROUND">
