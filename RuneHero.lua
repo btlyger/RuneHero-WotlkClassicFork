@@ -46,7 +46,7 @@ local runeY = {
 	[3] = start-offset*4,
 	[4] = start-offset*5,
     [7] = start-offset*6-10, -- Ability cooldowns below
-    [8] = start+offset+10  -- Ability cooldowns above
+    [8] = start+offset+14  -- Ability cooldowns above
 }
 
 local watchedSpells = {
@@ -258,7 +258,7 @@ function RuneFrameC_OnLoad (self)
 	self:RegisterEvent("RUNE_TYPE_UPDATE");
     self:RegisterEvent("RUNE_POWER_UPDATE");
 	--self:RegisterEvent("RUNE_REGEN_UPDATE");
-	self:RegisterEvent("COMBAT_LOG_EVENT");
+	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
 	self:RegisterEvent("ADDON_LOADED");
     self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
     self:RegisterEvent("SPELL_UPDATE_COOLDOWN");
@@ -272,18 +272,11 @@ end
 
 
 function RuneFrameC_OnUpdate(self)
-
 	local power = UnitPower("player");
-	--local maxPower = UnitPowerMax("player");
-	--local tempPower;
-
-	runePowerStatusBar:SetWidth(power * 5.12)
-	--if ( maxPower == 100 ) then
-		RuneStatusBar:SetTexCoord(0, power*.01, 0, 1);
-	--else - trying to figure out how to adjust RP status bar based on max RP
-	--	tempPower = power * (100/maxPower) 
-	--	RuneStatusBar:SetTexCoord(0, tempPower*.01, 0, 1);
-	--end
+	local maxPower = UnitPowerMax("player");
+ 
+    runePowerStatusBar:SetWidth((power/maxPower) * 512)
+    RuneStatusBar:SetTexCoord(0, power/maxPower, 0, 1);
 
 	-- Hide RP number indicator if there's no RP
 	if ( power > 0) then
@@ -297,22 +290,44 @@ end
 -- The event detector
 function RuneFrameC_OnEvent (self, event, ...)
 
-	-- Proc detector - old procs; needs to be updated
-	if ( event == "COMBAT_LOG_EVENT" ) then
-		if (arg10 == "Death Trance" and arg7 == UnitName("player"))    then
-			if ( arg2 == "SPELL_AURA_APPLIED") then
+	-- Proc detector
+	if ( event == "COMBAT_LOG_EVENT_UNFILTERED" ) then
+        local timestamp, subevent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellId, spellName, spellSchool, damageDealt = CombatLogGetCurrentEventInfo();
+        local playerName = UnitName("player");
+        local applied = subevent == "SPELL_AURA_APPLIED";
+        local removed = subevent == "SPELL_AURA_REMOVED";
+        local proc = false;
+        
+		if (spellName == "Death Trance" and sourceName == playerName) then
+            proc = true;
+			if ( applied ) then
 				RuneBlade:SetTexture("Interface\\AddOns\\RuneHero\\textures\\runeblade-proc");
-			elseif (arg2=="SPELL_AURA_REMOVED") then
+			elseif ( removed ) then
 				RuneBlade:SetTexture("Interface\\AddOns\\RuneHero\\textures\\runeblade");
 			end
-            elseif (arg10 == "Killing Machine" and arg7 == UnitName("player"))    then
-			if ( arg2 == "SPELL_AURA_APPLIED") then
+        elseif (spellName == "Killing Machine" and sourceName == playerName) then
+            proc = true;
+			if ( applied ) then
 				RuneBlade:SetTexture("Interface\\AddOns\\RuneHero\\textures\\runeblade-proc");
-			elseif (arg2=="SPELL_AURA_REMOVED") then
+			elseif ( removed ) then
 				RuneBlade:SetTexture("Interface\\AddOns\\RuneHero\\textures\\runeblade");
 			end
+        elseif (spellName == "Freezing Fog" and sourceName == playerName) then
+            proc = true;
+            if ( applied ) then
+                RuneBlade:SetTexture("Interface\\AddOns\\RuneHero\\textures\\runeblade-proc");
+            elseif ( removed ) then
+                RuneBlade:SetTexture("Interface\\AddOns\\RuneHero\\textures\\runeblade");
+            end
 		end
-
+  
+        if ( proc ) then
+            if ( applied ) then
+                runePowerStatusBar:Hide();
+            elseif ( removed ) then
+                runePowerStatusBar:Show();
+            end
+        end
 	-- Fires when the player enters the world, enters/leaves an instance, respawns at a GY, possibly at any loading screen as well
 	elseif ( event == "PLAYER_ENTERING_WORLD" ) then
 		for rune in next, self.runes do
@@ -498,6 +513,14 @@ function CooldownButtonC_OnUpdate (self, elapsed)
             elseif (start ~= nil) then
                 self.shouldEndTime = duration + start
                 self.fullDuration = duration
+                
+                -- Shortest cooldowns on top
+                if duration < 200 then
+                    self:SetFrameLevel(300-duration)
+                else
+                    self:SetFrameLevel(100)
+                end
+                
                 remain = (duration - GetTime() + start) / duration;
                 
                 if (runeType ~= nil and RuneHero_Saved.desaturateRunes) then
