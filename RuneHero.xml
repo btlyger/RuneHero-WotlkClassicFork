@@ -75,6 +75,50 @@
       </OnLoad>
     </Scripts>
   </Button>
+  
+  <Button name="CooldownButtonTemplateC" virtual="true" hidden="false">
+    <Size>
+      <AbsDimension x="24" y="24"/>
+    </Size>
+    <Frames>
+        <Frame frameStrata="MEDIUM" setAllPoints="true" name="$parentShine">
+            <Layers>
+                <Layer level="OVERLAY">
+                    <Texture name="$parentTexture" file="Interface\ComboFrame\ComboPoint" alphaMode="ADD" hidden="true">
+                        <Size x="37" y="37"/>
+                        <Anchors>
+                            <Anchor point="CENTER">
+                                <Offset x="0" y="0"/>
+                            </Anchor>
+                        </Anchors>
+                        <TexCoords left="0.563" right="1" top="0" bottom="1"/>
+                    </Texture>
+                </Layer>
+            </Layers>
+        </Frame>
+    </Frames>
+    <Layers>
+        <Layer level="ARTWORK">
+            <Texture name="$parentTexture" file="Interface\CharacterFrame\TotemBorder">
+                <Size>
+                    <AbsDimension x="24" y="24"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="CENTER">
+                        <Offset>
+                            <AbsDimension x="0" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Texture>
+        </Layer>
+    </Layers>
+    <Scripts>
+      <OnLoad>
+        CooldownButtonC_OnLoad(self);
+      </OnLoad>
+    </Scripts>
+  </Button>
 
   <Frame name="RuneFrameC" parent="UIParent" frameStrata="LOW" toplevel="true" movable="true" hidden="false">
     <Size>

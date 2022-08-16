@@ -24,16 +24,38 @@ function RH.RuneHero_LoadOptions (self)
 	lockButton:SetChecked(true);
  
      -- Button to enable desaturation for runes on cooldown runehero
-    local runeCdButton = CreateFrame( "CheckButton", "runeCdButton", rhOptions, "OptionsCheckButtonTemplate");
-    runeCdButton.text = _G["runeCdButton".."Text"];
-    runeCdButton.text:SetText("Desaturate Runes on Cooldown");
-    runeCdButton:SetPoint("BOTTOMLEFT", lockButton, 0, -40);
-    runeCdButton:SetScript("OnClick", RuneHero_DesaturateToggle );
-    runeCdButton:SetChecked(RuneHero_Saved.desaturateRunes);
+    local runeCdButton = CreateFrame( "CheckButton", "runeDesaturateButton", rhOptions, "OptionsCheckButtonTemplate");
+    runeDesaturateButton.text = _G["runeDesaturateButton".."Text"];
+    runeDesaturateButton.text:SetText("Desaturate Runes on Cooldown");
+    runeDesaturateButton:SetPoint("BOTTOMLEFT", lockButton, 0, -40);
+    runeDesaturateButton:SetScript("OnClick", RuneHero_DesaturateToggle );
+    runeDesaturateButton:SetChecked(RuneHero_Saved.desaturateRunes);
+    
+    -- Checkmark whether to show ability cooldowns
+    local abilityCooldownsCheckmark = CreateFrame( "CheckButton", "abilityCooldownsCheckmark", rhOptions, "OptionsCheckButtonTemplate");
+    abilityCooldownsCheckmark.text = _G["abilityCooldownsCheckmark".."Text"];
+    abilityCooldownsCheckmark.text:SetText("Show ability cooldowns");
+    abilityCooldownsCheckmark:SetPoint("BOTTOMLEFT", runeDesaturateButton, 0, -40);
+    abilityCooldownsCheckmark:SetScript("OnClick", RuneHero_ShowAbilityCooldowns );
+    abilityCooldownsCheckmark:SetChecked(RuneHero_Saved.showCooldowns);
+    
+    -- Checkmark to position ability cooldowns above or below runes
+    local cooldownsPositionCheckmark = CreateFrame( "CheckButton", "cooldownsPositionCheckmark", rhOptions, "OptionsCheckButtonTemplate");
+    cooldownsPositionCheckmark.text = _G["cooldownsPositionCheckmark".."Text"];
+    cooldownsPositionCheckmark.text:SetText("Show cooldowns above runes (uncheck for below)");
+    cooldownsPositionCheckmark:SetPoint("BOTTOMLEFT", abilityCooldownsCheckmark, 40, -40);
+    cooldownsPositionCheckmark:SetScript("OnClick", RuneHero_PositionAbilityCooldowns );
+    cooldownsPositionCheckmark:SetChecked(RuneHero_Saved.cooldownsAbove);
+    cooldownsPositionCheckmark:SetEnabled(RuneHero_Saved.showCooldowns);
 	
 	-- Drop down menu to select runeblade graphic
+    local runebladeTitle = rhOptions:CreateFontString("runebladeTitleFrame");
+    runebladeTitle:SetFontObject("GameFontNormal");
+    runebladeTitle:SetText("Runeblade Background");
+    runebladeTitle:SetPoint("BOTTOMLEFT", cooldownsPositionCheckmark, -40, -40);
+    
 	local runebladeSelector = CreateFrame( "Frame", "runebladeSelector", rhOptions, "UIDropDownMenuTemplate");
-	runebladeSelector:SetPoint("BOTTOMLEFT", runeCdButton, 0, -40);
+	runebladeSelector:SetPoint("BOTTOMLEFT", runebladeTitle, 0, -40);
 	runebladeSelector.text = _G["runebladeSelector".."Text"];
 	runebladeSelector.text:SetText( RuneHero_Saved.runebladeSelectorTitle );
 	local info = {};
@@ -154,6 +176,20 @@ function RuneHero_DesaturateToggle()
     
     RuneHero_Saved.desaturateRunes = desaturateRunes
 end
+
+function RuneHero_ShowAbilityCooldowns()
+    local showCDs = abilityCooldownsCheckmark:GetChecked()
+    
+    cooldownsPositionCheckmark:SetEnabled(showCDs)
+    RuneHero_Saved.showCooldowns = showCDs
+end
+
+function RuneHero_PositionAbilityCooldowns()
+    local positionAbove = cooldownsPositionCheckmark:GetChecked()
+    
+    RuneHero_Saved.cooldownsAbove = positionAbove
+end
+
 
 function RuneHero_Resize(scaleParam)
 		if ( scaleParam == nil ) then

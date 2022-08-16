@@ -8,3 +8,4 @@
 RuneHero.xml
 RuneHero.lua
 RuneHero_Options.lua
+RuneHelpers.lua

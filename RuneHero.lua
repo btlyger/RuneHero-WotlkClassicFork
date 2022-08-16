@@ -3,11 +3,13 @@ local addonName, RH = ... ;
 local runePowerStatusBar;
 local runePowerStatusBarDark;
 local runePowerStatusBarText;
+local cooldowns = {};
 
 local RUNETYPEC_BLOOD = 1;
 local RUNETYPEC_FROST = 2;
 local RUNETYPEC_UNHOLY = 3;
 local RUNETYPEC_DEATH = 4;
+local RUNETYPEC_COOLDOWN = 5;
 
 --Reference /FrameXML/RuneFrame.lua -- https://searchcode.com/codesearch/view/78334991/
 local runeTextures = {
@@ -22,6 +24,7 @@ local runeColors = {
     [RUNETYPEC_UNHOLY] = {0, 0.65, 0, 1},
     [RUNETYPEC_FROST] = {0, 0.3, 1.0, 1},
     [RUNETYPEC_DEATH] = {0.8, 0.2, 1.0, 1},
+    [RUNETYPEC_COOLDOWN] = {1, 1, 1, 1}
 }
 
 local cooldownRuneColors = {
@@ -29,6 +32,7 @@ local cooldownRuneColors = {
     [RUNETYPEC_UNHOLY] = {0, 0.325, 0, 1},
     [RUNETYPEC_FROST] = {0, 0.15, 0.5, 1},
     [RUNETYPEC_DEATH] = {0.4, 0.1, 0.5, 1},
+    [RUNETYPEC_COOLDOWN] = {0.5, 0.5, 0.5, 1}
 }
 
 local offset = 15;
@@ -40,7 +44,52 @@ local runeY = {
 	[5] = start-offset*2, -- In wotlk classic, frost and unholy are swapped in the UI
 	[6] = start-offset*3,
 	[3] = start-offset*4,
-	[4] = start-offset*5
+	[4] = start-offset*5,
+    [7] = start-offset*6-10, -- Ability cooldowns below
+    [8] = start+offset+10  -- Ability cooldowns above
+}
+
+local watchedSpells = {
+    [43265] = true, -- death and decay (rank 1)
+    [49936] = true, -- death and decay (rank 2)
+    [49937] = true, -- death and decay (rank 3)
+    [49938] = true, -- death and decay (rank 4)
+    [57330] = true, -- horn of winter (rank 1)
+    [57623] = true, -- horn of winter (rank 2)
+    [55233] = true, -- vamp blood
+    [49016] = true, -- unholy frenzy
+    [45529] = true, -- blood tap
+    [28982] = true, -- rune tap
+    [48792] = true, -- ibf
+    [49158] = true, -- corpse explosion (rank 1)
+    [51325] = true, -- corpse explosion (rank 2)
+    [51326] = true, -- corpse explosion (rank 3)
+    [51327] = true, -- corpse explosion (rank 4)
+    [51328] = true, -- corpse explosion (rank 5)
+    [47568] = true, -- empower rune weapon
+    [61999] = true, -- raise ally
+    [48707] = true, -- ams
+    [48743] = true, -- death pact
+    [56222] = true, -- dark command (taunt)
+    [47476] = true, -- strangulate
+    [46584] = true, -- raise dead
+    [49576] = true, -- death grip
+    [47528] = true, -- mind freeze
+    [42650] = true, -- army of the dead
+    [49039] = true, -- lichborne
+    [49796] = true, -- deathchill
+    [49203] = true, -- hungering cold
+    [49184] = true, -- howling blast (rank 1)
+    [51409] = true, -- howling blast (rank 2)
+    [51410] = true, -- howling blast (rank 3)
+    [51411] = true, -- howling blast (rank 4)
+    [51052] = true, -- amz
+    [63560] = true, -- ghoul frenzy
+    [49206] = true, -- summon gargoyle
+    [49028] = true, -- dancing rune weapon
+    [49005] = true, -- mark of blood
+    [49222] = true, -- bone shield
+    [51271] = true, -- unbreakable armor
 }
 
 RuneHero_Saved = {
@@ -55,7 +104,13 @@ RuneHero_Saved = {
 	blade = "runeblade";
 	runebladeSelectorTitle = "Runeblade";
     desaturateRunes = true;
+    showCooldowns = true;
+    cooldownsAbove = false;
 };
+
+--
+-- RuneButton
+--
 
 function RuneButtonC_OnLoad (self)
 	RuneFrameC_AddRune(RuneFrameC, self);
@@ -70,13 +125,18 @@ function RuneButtonC_OnLoad (self)
 
 	self:SetScript("OnUpdate", RuneButtonC_OnUpdate);
 
-	self:SetFrameLevel( self:GetFrameLevel() + 2*self:GetID() );
-	self.border:SetFrameLevel( self:GetFrameLevel() + 1 );
+	--self:SetFrameLevel( self:GetFrameLevel() + 2*self:GetID() );
+	--self.border:SetFrameLevel( self:GetFrameLevel() + 1 );
 end
 
 function RuneButtonC_OnUpdate (self, elapsed)
     local runeId = self:GetID()
-    local runeType = GetRuneType(self:GetID());
+    
+    if runeId == nil then
+        return
+    end
+    
+    local runeType = GetRuneType(runeId);
 	local start, duration, r = GetRuneCooldown(runeId);
 
 	if (r) then
@@ -114,17 +174,19 @@ function RuneButtonC_Update (self, runeIndex, dontFlash)
         self:Hide();
     end
 
-    local runeType = GetRuneType(runeIndex);
-    
-    if (runeType ~= nil) then
-        if (not dontFlash and self.rune.runeType ~= runeType) then
-            --RuneButtonC_ShineFadeIn(self.shineTexture)
+    if (runeIndex ~= nil) then
+        local runeType = GetRuneType(runeIndex);
+        
+        if (runeType ~= nil) then
+            if (not dontFlash and self.rune.runeType ~= runeType) then
+                --RuneButtonC_ShineFadeIn(self.shineTexture)
+            end
+        
+            self.rune:SetTexture(runeTextures[runeType]);
+            self.rune.runeType = runeType
+            self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
+            self.texture:SetVertexColor(unpack(runeColors[runeType]));
         end
-    
-        self.rune:SetTexture(runeTextures[runeType]);
-        self.rune.runeType = runeType
-        self.texture:SetTexture("Interface\\AddOns\\RuneHero\\textures\\Ring-test.tga");
-        self.texture:SetVertexColor(unpack(runeColors[runeType]));
     end
         
     self.bg:SetVertexColor(.2,.2,.2,1);
@@ -173,6 +235,10 @@ function RuneButtonC_ShineFadeOut(self, fadeTime)
     end
 end
 
+--
+-- RuneFrame
+--
+
 function RuneFrameC_OnLoad (self)
 
 	-- Disable rune frame if not a death knight.
@@ -194,6 +260,8 @@ function RuneFrameC_OnLoad (self)
 	--self:RegisterEvent("RUNE_REGEN_UPDATE");
 	self:RegisterEvent("COMBAT_LOG_EVENT");
 	self:RegisterEvent("ADDON_LOADED");
+    self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
+    self:RegisterEvent("SPELL_UPDATE_COOLDOWN");
 
 	self:SetScript("OnEvent", RuneFrameC_OnEvent);
 	self:SetScript("OnUpdate", RuneFrameC_OnUpdate);
@@ -268,6 +336,20 @@ function RuneFrameC_OnEvent (self, event, ...)
 	elseif ( event == "RUNE_REGEN_UPDATE" ) then
 		RuneButtonC_Event();
 
+    -- Fires when a spell cast ends
+    elseif ( event == "UNIT_SPELLCAST_SUCCEEDED" ) then
+        local _, _, spellID = ...
+        if ( spellID ~= nil ) then
+            local baseCooldown = GetSpellBaseCooldown(spellID) or 0
+            if (baseCooldown > 0) then -- queue it up
+                if watchedSpells[spellID] == true then
+                    CooldownButtonC_LoadSpell(spellID)
+                end
+            end
+        end
+        
+    elseif ( event == "SPELL_UPDATE_COOLDOWN" ) then
+
 	-- Fires when RuneHero and the saved variables are loaded
 	elseif ( event == "ADDON_LOADED"  ) then
 	
@@ -287,7 +369,6 @@ function RuneFrameC_OnEvent (self, event, ...)
 		RuneFrameC:ClearAllPoints();
 		RuneFrameC:SetPoint(RuneHero_Saved.anchor, RuneHero_Saved.parent,RuneHero_Saved.rel,RuneHero_Saved.x,RuneHero_Saved.y);
 		RuneFrameC:SetScale(RuneHero_Saved.scale);
-		RuneHero_ButtonScale(RuneHero_Saved.scale);
 		
 		RuneBlade:SetTexture( strconcat("Interface\\AddOns\\RuneHero\\textures\\", RuneHero_Saved.blade) );
 		
@@ -299,7 +380,8 @@ function RuneFrameC_OnEvent (self, event, ...)
 		RuneStatusBar:SetAllPoints();
 		RuneStatusBar:SetTexture( strconcat("Interface\\AddOns\\RuneHero\\textures\\", RuneHero_Saved.blade, "-statusbar.tga") );
 		
-		runePowerStatusBarText = CreateFrame("StatusBar", nil, UIParent):CreateFontString("RuneBladeStatusBarText", 'OVERLAY');
+		local runePowerTextFrame = CreateFrame("Frame", nil, UIParent);
+        runePowerStatusBarText = runePowerTextFrame:CreateFontString("RuneHeroPowerFrameText", 'OVERLAY');
 		runePowerStatusBarText:ClearAllPoints();
 		runePowerStatusBarText:SetFontObject( WorldMapTextFont );
 		runePowerStatusBarText:SetTextColor(.6,.9,1);
@@ -307,9 +389,19 @@ function RuneFrameC_OnEvent (self, event, ...)
 		runePowerStatusBarText:SetJustifyH("CENTER");
 		runePowerStatusBarText:SetWidth(90);
 		runePowerStatusBarText:SetHeight(40);
+        runePowerStatusBarText:SetScale(RuneHero_Saved.scale);
+  
+        RuneHero_ButtonScale(RuneHero_Saved.scale);
 		
 		DEFAULT_CHAT_FRAME:AddMessage("RuneHero activated! Type '/runehero' to reposition the bar.");
-	
+  
+        for spellID,_ in pairs(watchedSpells) do
+            local start, _, _ = GetSpellCooldown(spellID);
+            
+            if (start ~= 0) then
+                CooldownButtonC_LoadSpell(spellID)
+            end
+        end
 	end
 end
 
@@ -333,6 +425,114 @@ function RuneFrameC_OnDragStop()
 	RuneHero_SetLevels();
 end
 
+--
+-- CooldownButton
+--
+
+function CooldownButtonC_OnLoad (self)
+    self.texture = getglobal(self:GetName().."Texture");
+    self.shineTexture = getglobal(self:GetName().."ShineTexture");
+    
+    self:SetScript("OnUpdate", CooldownButtonC_OnUpdate);
+end
+
+function CooldownButtonC_LoadSpell(spellID)
+    if not RuneHero_Saved.showCooldowns then
+        return
+    end
+    
+    local name, rank, icon = GetSpellInfo(spellID);
+    
+    if icon == nil then
+        return
+    elseif cooldowns[spellID] ~= nil then
+        --DEFAULT_CHAT_FRAME:AddMessage("Reusing Spell Frame "..name.." using texture "..spellID);
+        cooldowns[spellID].spellID = spellID;
+        cooldowns[spellID].endTime = nil;
+        cooldowns[spellID].shouldEndTime = nil;
+        cooldowns[spellID].fullDuration = nil;
+        cooldowns[spellID]:Show();
+    else
+        --DEFAULT_CHAT_FRAME:AddMessage("Creating Spell Frame "..name.." using texture "..spellID);
+        local button = CreateFrame("Button", strconcat("RHCDButton", name), UIParent, "CooldownButtonTemplateC");
+        button:SetScale(RuneHero_Saved.scale);
+        button.texture:SetTexture(icon);
+        button.spellID = spellID;
+        
+        cooldowns[spellID] = button;
+    end
+end
+
+function CooldownButtonC_OnUpdate (self, elapsed)
+    if not RuneHero_Saved.showCooldowns or self.spellID == nil then
+        self:Hide();
+        return
+    end
+    
+    local spellID = self.spellID
+    local start, duration, enabled = GetSpellCooldown(spellID);
+    
+    if self.endTime ~= nil then
+        if (GetTime() - self.endTime > 1) then
+            self.spellID = nil
+        end
+        return
+    end
+    
+    --DEFAULT_CHAT_FRAME:AddMessage("Spell "..spellID.." start "..start.." duration "..duration.." enabled "..enabled)
+    
+    local cooldownYPosition = runeY[7]
+    if RuneHero_Saved.cooldownsAbove then
+        cooldownYPosition = runeY[8]
+    end
+    
+    local cooldownFinished = false;
+    if (start == 0) then
+        cooldownFinished = true;
+    else
+        local remain = -1;
+        
+        if (duration ~= nil) then
+            if self.shouldEndTime ~= nil and self.fullDuration ~= nil then
+                remain = (self.shouldEndTime - GetTime()) / self.fullDuration;
+            elseif (start ~= nil) then
+                self.shouldEndTime = duration + start
+                self.fullDuration = duration
+                remain = (duration - GetTime() + start) / duration;
+                
+                if (runeType ~= nil and RuneHero_Saved.desaturateRunes) then
+                    self.texture:SetVertexColor(unpack(cooldownRuneColors[RUNETYPEC_COOLDOWN]));
+                end
+            end
+        end
+        
+        if ( remain < 0) then
+            cooldownFinished = true;
+        elseif ( remain > 1) then
+            self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX - 3 + RuneHero_Saved.scrollWidth, cooldownYPosition );
+        else
+            self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX - 3 + remain*RuneHero_Saved.scrollWidth, cooldownYPosition );
+        end
+    end
+    
+    if cooldownFinished then
+        self:SetPoint("TOPLEFT", "RuneFrameC", "TOPLEFT", RuneHero_Saved.runeX - 3, cooldownYPosition);
+        
+        if (runeType ~= nil and RuneHero_Saved.desaturateRunes) then
+            self.texture:SetVertexColor(unpack(runeColors[RUNETYPEC_COOLDOWN]));
+        end
+        
+        self.endTime = GetTime();
+        self.shouldEndTime = nil;
+        self.fullDuration = nil;
+        RH.ShineFadeIn(self.shineTexture);
+    end
+end
+
+--
+-- Helpers
+--
+
 function RuneHero_ButtonScale(scale)
 	RuneButtonIndividual1C:SetScale(scale);
 	RuneButtonIndividual2C:SetScale(scale);
@@ -340,6 +540,15 @@ function RuneHero_ButtonScale(scale)
 	RuneButtonIndividual4C:SetScale(scale);
 	RuneButtonIndividual5C:SetScale(scale);
 	RuneButtonIndividual6C:SetScale(scale);
+ 
+    local runePowerText = getglobal("RuneHeroPowerFrameText");
+    if runePowerText ~= nil then
+        runePowerText:SetScale(scale);
+    end
+    
+    for spellID,cdButton in pairs(cooldowns) do
+        cdButton:SetScale(scale);
+    end
 end
 
 function RuneHero_SetLevels()
