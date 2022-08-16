@@ -275,8 +275,10 @@ function RuneFrameC_OnUpdate(self)
 	local power = UnitPower("player");
 	local maxPower = UnitPowerMax("player");
  
-    runePowerStatusBar:SetWidth((power/maxPower) * 512)
-    RuneStatusBar:SetTexCoord(0, power/maxPower, 0, 1);
+    if maxPower ~= 0 then
+        runePowerStatusBar:SetWidth((power/maxPower) * 512)
+        RuneStatusBar:SetTexCoord(0, power/maxPower, 0, 1);
+    end
 
 	-- Hide RP number indicator if there's no RP
 	if ( power > 0) then
