@@ -4,6 +4,7 @@ local runePowerStatusBar;
 local runePowerStatusBarDark;
 local runePowerStatusBarText;
 local cooldowns = {};
+local currentCast;
 
 local RUNETYPEC_BLOOD = 1;
 local RUNETYPEC_FROST = 2;
@@ -353,10 +354,16 @@ function RuneFrameC_OnEvent (self, event, ...)
 	elseif ( event == "RUNE_REGEN_UPDATE" ) then
 		RuneButtonC_Event();
 
+    -- Fire when a spell cast begins
+    elseif ( event == "UNIT_SPELLCAST_SENT") then
+        local unitID, _, guid, _ = ...
+        if unitID == "player" then
+            currentCast = guid
+        end
     -- Fires when a spell cast ends
     elseif ( event == "UNIT_SPELLCAST_SUCCEEDED" ) then
-        local _, _, spellID = ...
-        if ( spellID ~= nil ) then
+        local _, guid, spellID = ...
+        if ( spellID ~= nil and guid == currentCast ) then
             local baseCooldown = GetSpellBaseCooldown(spellID) or 0
             if (baseCooldown > 0) then -- queue it up
                 if watchedSpells[spellID] == true then
