@@ -261,6 +261,7 @@ function RuneFrameC_OnLoad (self)
 	--self:RegisterEvent("RUNE_REGEN_UPDATE");
 	self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
 	self:RegisterEvent("ADDON_LOADED");
+    self:RegisterEvent("UNIT_SPELLCAST_SENT");
     self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED");
     self:RegisterEvent("SPELL_UPDATE_COOLDOWN");
 
