@@ -6,6 +6,9 @@
 -- edit away and have fun!!!!!
 
 
+-- ### NOTE: This is unused in the Wotlk Classic fork.
+-- ### Death Trance, Killing Machine, and Freezing Fog are tracked in RuneHero.lua > RuneFrameC_OnEvent > COMBAT_LOG_EVENT_UNFILTERED
+
 -- how many Procs in this file ? 
 RHProcs = 2; -- procs
 RHProc = {}; -- do not delete me 
